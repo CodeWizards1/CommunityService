@@ -5,22 +5,21 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Projects/ComunityService/genproto/CommunityService"
-	pb "github.com/Projects/ComunityService/genproto/CommunityService"
+	com "github.com/Projects/ComunityService/genproto/CommunityService"
 	"github.com/Projects/ComunityService/storage/postgres"
 	"github.com/jmoiron/sqlx"
 )
 
 type communityService struct {
 	CommunityRepository *postgres.CommunityRepository
-	pb.UnimplementedCommunityServiceServer
+	com.UnimplementedCommunityServiceServer
 }
 
 func NewCommunityService(db *sqlx.DB) *communityService {
 	return &communityService{CommunityRepository: postgres.NewCommunityRepository(db)}
 }
 
-func ProtoToRepoCommunity(protoCommunity *CommunityService.Community) *postgres.Community {
+func ProtoToRepoCommunity(protoCommunity *com.Community) *postgres.Community {
 	return &postgres.Community{
 		ID:          protoCommunity.Id,
 		Name:        protoCommunity.Name,
@@ -31,8 +30,8 @@ func ProtoToRepoCommunity(protoCommunity *CommunityService.Community) *postgres.
 	}
 }
 
-func RepoToProtoCommunity(repoCommunity *postgres.Community) *CommunityService.Community {
-	return &CommunityService.Community{
+func RepoToProtoCommunity(repoCommunity *postgres.Community) *com.Community {
+	return &com.Community{
 		Id:          repoCommunity.ID,
 		Name:        repoCommunity.Name,
 		Description: repoCommunity.Description,
@@ -47,7 +46,7 @@ func parseTime(timeStr string) time.Time {
 	return t
 }
 
-func (cs *communityService) CreateCommunity(ctx context.Context, comReq *pb.CreateCommunityRequest) (*pb.CreateCommunityResponse, error) {
+func (cs *communityService) CreateCommunity(ctx context.Context, comReq *com.CreateCommunityRequest) (*com.CreateCommunityResponse, error) {
 	community := ProtoToRepoCommunity(comReq.Community)
 	msg := &postgres.Message{}
 
@@ -56,5 +55,5 @@ func (cs *communityService) CreateCommunity(ctx context.Context, comReq *pb.Crea
 		return nil, fmt.Errorf("error creating community: %v", msg.Error)
 	}
 
-	return &pb.CreateCommunityResponse{Community: RepoToProtoCommunity(communityRes)}, nil
+	return &com.CreateCommunityResponse{Community: RepoToProtoCommunity(communityRes)}, nil
 }
