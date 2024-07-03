@@ -48,7 +48,6 @@ func parseTime(timeStr string) time.Time {
 
 func (cs *communityService) CreateCommunity(ctx context.Context, comReq *com.CreateCommunityRequest) (*com.CreateCommunityResponse, error) {
 	community := ProtoToRepoCommunity(comReq.Community)
-	msg := &postgres.Message{}
 
 	communityRes, msg := cs.CommunityRepository.CreateCommunity(ctx, community)
 	if msg.Error != nil {
@@ -56,4 +55,54 @@ func (cs *communityService) CreateCommunity(ctx context.Context, comReq *com.Cre
 	}
 
 	return &com.CreateCommunityResponse{Community: RepoToProtoCommunity(communityRes)}, nil
+}
+
+func (cs *communityService) GetCommunityBy(ctx context.Context, comReq *com.GetCommunityRequest) (*com.GetCommunityResponse, error) {
+	communityRes, msg := cs.CommunityRepository.GetCommunity(ctx, comReq.Id)
+	if msg.Error != nil {
+		return nil, fmt.Errorf("error getting community: %v", msg.Error)
+	}
+
+	return &com.GetCommunityResponse{Community: RepoToProtoCommunity(communityRes)}, nil
+}
+
+func (cs *communityService) GetAllCommunities(ctx context.Context, comReq *com.GetAllCommunityRequest) (*com.GetAllCommunityResponse, error) {
+	filter := postgres.CommunityGetFilter{
+		Name:   &comReq.Name,
+		Limit:  &comReq.Limit,
+		Offset: &comReq.Offset,
+	}
+
+	communityRes, msg := cs.CommunityRepository.GetAllCommunities(ctx, &filter)
+	if msg.Error != nil {
+		return nil, fmt.Errorf("error getting communities: %v", msg.Error)
+	}
+
+	var communities []*com.Community
+	for _, community := range communityRes {
+		communities = append(communities, RepoToProtoCommunity(community))
+	}
+
+	if communities == nil {
+		communities = []*com.Community{}
+	}
+
+	return &com.GetAllCommunityResponse{Communities: communities}, nil
+}
+
+func (cs *communityService) UpdateCommunity(ctx context.Context, upCom *com.UpdateCommunityRequest) (*com.UpdateCommunityResponse, error) {
+	community := ProtoToRepoCommunity(upCom.Community)
+	upFilter := postgres.CommunityUpdateFilter{
+		ID:          &upCom.Community.Id,
+		Name:        &community.Name,
+		Description: &community.Description,
+		Location:    &community.Location,
+	}
+
+	communityRes, msg := cs.CommunityRepository.UpdateCommunity(ctx, &upFilter)
+
+	if msg.Error != nil {
+		return nil, fmt.Errorf("error updating community: %v", msg.Error)
+	}
+	return &com.UpdateCommunityResponse{Community: RepoToProtoCommunity(communityRes)}, nil
 }
