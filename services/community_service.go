@@ -106,3 +106,12 @@ func (cs *communityService) UpdateCommunity(ctx context.Context, upCom *com.Upda
 	}
 	return &com.UpdateCommunityResponse{Community: RepoToProtoCommunity(communityRes)}, nil
 }
+
+func (cs *communityService) DeleteCommunity(ctx context.Context, comReq *com.DeleteCommunityRequest) (*com.DeleteCommunityResponse, error) {
+	msg := cs.CommunityRepository.DeleteCommunity(ctx, comReq.Id)
+	if msg.Error != nil {
+		return nil, fmt.Errorf("error deleting community: %v", msg.Error)
+	}
+
+	return &com.DeleteCommunityResponse{Message: *msg.Message}, nil
+}
