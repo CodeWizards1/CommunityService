@@ -45,8 +45,8 @@ type CommunityUpdateFilter struct {
 type CommunityGetFilter struct {
 	Name     *string `json:"name,omitempty"`
 	Location *string `json:"location,omitempty"`
-	Limit    *int    `json:"limit,omitempty"`
-	Offset   *int    `json:"offset,omitempty"`
+	Limit    *int32  `json:"limit,omitempty"`
+	Offset   *int32  `json:"offset,omitempty"`
 }
 
 type Message struct {
