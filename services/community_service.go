@@ -58,7 +58,7 @@ func (cs *communityService) JoinCommunity(ctx context.Context, comReq *com.JoinC
 	userID := comReq.UserId
 
 	if userID == "" {
-		errMsg := "Error: user ID is empty"
+		errMsg := "error: user ID is empty"
 		jComRes.Message = errMsg
 		return &jComRes, fmt.Errorf(errMsg)
 	}
