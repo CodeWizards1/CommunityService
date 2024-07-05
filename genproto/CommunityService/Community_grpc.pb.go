@@ -28,6 +28,7 @@ const (
 	CommunityService_LeaveCommunity_FullMethodName       = "/CommunityServer.CommunityService/LeaveCommunity"
 	CommunityService_CreateCommunityEvent_FullMethodName = "/CommunityServer.CommunityService/CreateCommunityEvent"
 	CommunityService_GetCommunityEvent_FullMethodName    = "/CommunityServer.CommunityService/GetCommunityEvent"
+	CommunityService_IsUserValid_FullMethodName          = "/CommunityServer.CommunityService/IsUserValid"
 )
 
 // CommunityServiceClient is the client API for CommunityService service.
@@ -43,6 +44,7 @@ type CommunityServiceClient interface {
 	LeaveCommunity(ctx context.Context, in *LeaveCommunityRequest, opts ...grpc.CallOption) (*LeaveCommunityResponse, error)
 	CreateCommunityEvent(ctx context.Context, in *CreateCommunityEventRequest, opts ...grpc.CallOption) (*CreateCommunityEventResponse, error)
 	GetCommunityEvent(ctx context.Context, in *GetCommunityEventRequest, opts ...grpc.CallOption) (*GetCommunityEventResponse, error)
+	IsUserValid(ctx context.Context, in *IsCommunityValidRequest, opts ...grpc.CallOption) (*IsCommunityValidResponse, error)
 }
 
 type communityServiceClient struct {
@@ -143,6 +145,16 @@ func (c *communityServiceClient) GetCommunityEvent(ctx context.Context, in *GetC
 	return out, nil
 }
 
+func (c *communityServiceClient) IsUserValid(ctx context.Context, in *IsCommunityValidRequest, opts ...grpc.CallOption) (*IsCommunityValidResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IsCommunityValidResponse)
+	err := c.cc.Invoke(ctx, CommunityService_IsUserValid_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CommunityServiceServer is the server API for CommunityService service.
 // All implementations must embed UnimplementedCommunityServiceServer
 // for forward compatibility
@@ -156,6 +168,7 @@ type CommunityServiceServer interface {
 	LeaveCommunity(context.Context, *LeaveCommunityRequest) (*LeaveCommunityResponse, error)
 	CreateCommunityEvent(context.Context, *CreateCommunityEventRequest) (*CreateCommunityEventResponse, error)
 	GetCommunityEvent(context.Context, *GetCommunityEventRequest) (*GetCommunityEventResponse, error)
+	IsUserValid(context.Context, *IsCommunityValidRequest) (*IsCommunityValidResponse, error)
 	mustEmbedUnimplementedCommunityServiceServer()
 }
 
@@ -189,6 +202,9 @@ func (UnimplementedCommunityServiceServer) CreateCommunityEvent(context.Context,
 }
 func (UnimplementedCommunityServiceServer) GetCommunityEvent(context.Context, *GetCommunityEventRequest) (*GetCommunityEventResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCommunityEvent not implemented")
+}
+func (UnimplementedCommunityServiceServer) IsUserValid(context.Context, *IsCommunityValidRequest) (*IsCommunityValidResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IsUserValid not implemented")
 }
 func (UnimplementedCommunityServiceServer) mustEmbedUnimplementedCommunityServiceServer() {}
 
@@ -365,6 +381,24 @@ func _CommunityService_GetCommunityEvent_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CommunityService_IsUserValid_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IsCommunityValidRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CommunityServiceServer).IsUserValid(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CommunityService_IsUserValid_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CommunityServiceServer).IsUserValid(ctx, req.(*IsCommunityValidRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CommunityService_ServiceDesc is the grpc.ServiceDesc for CommunityService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -407,6 +441,10 @@ var CommunityService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCommunityEvent",
 			Handler:    _CommunityService_GetCommunityEvent_Handler,
+		},
+		{
+			MethodName: "IsUserValid",
+			Handler:    _CommunityService_IsUserValid_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

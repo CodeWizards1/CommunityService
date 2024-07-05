@@ -2,10 +2,13 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"strings"
 	"time"
+
+	com "github.com/Projects/ComunityService/genproto/CommunityService"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -236,4 +239,22 @@ func (c *CommunityRepository) GetAllCommunities(ctx context.Context, comFilter *
 	fmt.Println(communities)
 	successMsg := "Communities retrieved successfully"
 	return communities, &Message{Message: &successMsg}
+}
+
+func (c *CommunityRepository) IsValidCommunity(ctx context.Context, req *com.IsCommunityValidRequest) (*com.IsCommunityValidResponse, error) {
+	query :=
+		`
+			SLECT id FROM community WHERE deleted_at IS NOT NULL AND id = $1 
+			RETURNING id
+		`
+
+	row := c.db.QueryRowContext(ctx, query, req.Id)
+	var id string
+	if err := row.Scan(id); err != nil {
+		if err == sql.ErrNoRows {
+			return &com.IsCommunityValidResponse{Valid: false}, fmt.Errorf("no community found")
+		}
+	}
+
+	return &com.IsCommunityValidResponse{Valid: true}, nil
 }

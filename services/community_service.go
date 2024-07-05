@@ -53,63 +53,6 @@ func parseTime(timeStr string) time.Time {
 	return t
 }
 
-func (cs *communityService) JoinCommunity(ctx context.Context, comReq *com.JoinCommunityRequest) (*com.JoinCommunityResponse, error) {
-	jComRes := com.JoinCommunityResponse{}
-	userID := comReq.UserId
-	fmt.Println(comReq)
-	if userID == "" {
-		errMsg := "error: user ID is empty"
-		jComRes.Message = errMsg
-		return &jComRes, fmt.Errorf(errMsg)
-	}
-
-	userIDReq := user.IdUserRequest{UserId: userID}
-	userRes, err := cs.userClient.GetUserById(ctx, &userIDReq)
-	if err != nil {
-		errMsg := "Error: failed to get user details"
-		jComRes.Message = errMsg
-		return &jComRes, fmt.Errorf("%s: %v", errMsg, err)
-	}
-
-	jComRep := postgres.JoinCommunity{
-		CommunityID: comReq.CommunityId,
-		UserID:      userRes.UserId,
-		JoinedAt:    time.Now().Format(timeLayout),
-	}
-
-	joinRes, msg := cs.CommunityRepository.JoinCommunity(ctx, &jComRep)
-	if msg.Error != nil {
-		errMsg := "Error: failed to join community"
-		jComRes.Message = errMsg
-		return &jComRes, fmt.Errorf("%s: %v", errMsg, *msg.Error)
-	}
-
-	jComRes.Message = fmt.Sprintf("%s successfully joined the community %s", userRes.Username, joinRes.CommunityID)
-	return &jComRes, nil
-}
-
-func (cs *communityService) LeaveCommunity(ctx context.Context, c *com.LeaveCommunityRequest) (*com.LeaveCommunityResponse, error) {
-	userIDReq := user.IdUserRequest{UserId: c.UserId}
-	userRes, err := cs.userClient.GetUserById(ctx, &userIDReq)
-	if err != nil {
-		errMsg := "Error getting user failed"
-		return &com.LeaveCommunityResponse{Message: errMsg}, fmt.Errorf("%s: %v", errMsg, err)
-	}
-
-	jComRep := postgres.LeaveCommunity{
-		CommunityId: c.CommunityId,
-		UserID:      userRes.UserId,
-	}
-
-	msg := cs.CommunityRepository.LeaveCommunity(ctx, &jComRep)
-	if msg.Error != nil {
-		errMsg := "Error: failed to leave community for user"
-		return &com.LeaveCommunityResponse{Message: errMsg}, fmt.Errorf("%s: %v", errMsg, *msg.Error)
-	}
-
-	return &com.LeaveCommunityResponse{Message: fmt.Sprintf("%s successfully left the community %s", userRes.Username, c.CommunityId)}, nil
-}
-
 func (cs *communityService) CreateCommunity(ctx context.Context, comReq *com.CreateCommunityRequest) (*com.CreateCommunityResponse, error) {
 	community := ProtoToRepoCommunity(comReq.Community)
 	communityRes, msg := cs.CommunityRepository.CreateCommunity(ctx, community)
@@ -170,4 +113,8 @@ func (cs *communityService) DeleteCommunity(ctx context.Context, comReq *com.Del
 		return nil, fmt.Errorf("error deleting community: %v", *msg.Error)
 	}
 	return &com.DeleteCommunityResponse{Message: *msg.Message}, nil
+}
+
+func (cs *communityService) IsValidCommunity(ctx context.Context, comReq *com.IsCommunityValidRequest) (*com.IsCommunityValidResponse, error) {
+	return cs.CommunityRepository.IsValidCommunity(ctx, comReq)
 }
