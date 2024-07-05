@@ -56,7 +56,7 @@ func parseTime(timeStr string) time.Time {
 func (cs *communityService) JoinCommunity(ctx context.Context, comReq *com.JoinCommunityRequest) (*com.JoinCommunityResponse, error) {
 	jComRes := com.JoinCommunityResponse{}
 	userID := comReq.UserId
-
+	fmt.Println(comReq)
 	if userID == "" {
 		errMsg := "error: user ID is empty"
 		jComRes.Message = errMsg
@@ -114,7 +114,7 @@ func (cs *communityService) CreateCommunity(ctx context.Context, comReq *com.Cre
 	community := ProtoToRepoCommunity(comReq.Community)
 	communityRes, msg := cs.CommunityRepository.CreateCommunity(ctx, community)
 	if msg.Error != nil {
-		return nil, fmt.Errorf("error creating community: %v", msg.Error)
+		return nil, fmt.Errorf("error creating community: %v", *msg.Error)
 	}
 	return &com.CreateCommunityResponse{Community: RepoToProtoCommunity(communityRes)}, nil
 }
@@ -122,12 +122,13 @@ func (cs *communityService) CreateCommunity(ctx context.Context, comReq *com.Cre
 func (cs *communityService) GetCommunityBy(ctx context.Context, comReq *com.GetCommunityRequest) (*com.GetCommunityResponse, error) {
 	communityRes, msg := cs.CommunityRepository.GetCommunity(ctx, comReq.Id)
 	if msg.Error != nil {
-		return nil, fmt.Errorf("error getting community: %v", msg.Error)
+		return nil, fmt.Errorf("error getting community: %v", *msg.Error)
 	}
+
 	return &com.GetCommunityResponse{Community: RepoToProtoCommunity(communityRes)}, nil
 }
 
-func (cs *communityService) GetAllCommunities(ctx context.Context, comReq *com.GetAllCommunityRequest) (*com.GetAllCommunityResponse, error) {
+func (cs *communityService) GetAllCommunity(ctx context.Context, comReq *com.GetAllCommunityRequest) (*com.GetAllCommunityResponse, error) {
 	filter := postgres.CommunityGetFilter{
 		Name:   &comReq.Name,
 		Limit:  &comReq.Limit,
@@ -136,9 +137,10 @@ func (cs *communityService) GetAllCommunities(ctx context.Context, comReq *com.G
 
 	communityRes, msg := cs.CommunityRepository.GetAllCommunities(ctx, &filter)
 	if msg.Error != nil {
-		return nil, fmt.Errorf("error getting communities: %v", msg.Error)
+		return nil, fmt.Errorf("error getting communities: %v", *msg.Error)
 	}
 
+	fmt.Println(communityRes)
 	var communities []*com.Community
 	for _, community := range communityRes {
 		communities = append(communities, RepoToProtoCommunity(community))
@@ -155,10 +157,9 @@ func (cs *communityService) UpdateCommunity(ctx context.Context, upCom *com.Upda
 		Description: &community.Description,
 		Location:    &community.Location,
 	}
-
 	communityRes, msg := cs.CommunityRepository.UpdateCommunity(ctx, &upFilter)
 	if msg.Error != nil {
-		return nil, fmt.Errorf("error updating community: %v", msg.Error)
+		return nil, fmt.Errorf("error updating community: %v", *msg.Error)
 	}
 	return &com.UpdateCommunityResponse{Community: RepoToProtoCommunity(communityRes)}, nil
 }
@@ -166,7 +167,7 @@ func (cs *communityService) UpdateCommunity(ctx context.Context, upCom *com.Upda
 func (cs *communityService) DeleteCommunity(ctx context.Context, comReq *com.DeleteCommunityRequest) (*com.DeleteCommunityResponse, error) {
 	msg := cs.CommunityRepository.DeleteCommunity(ctx, comReq.Id)
 	if msg.Error != nil {
-		return nil, fmt.Errorf("error deleting community: %v", msg.Error)
+		return nil, fmt.Errorf("error deleting community: %v", *msg.Error)
 	}
 	return &com.DeleteCommunityResponse{Message: *msg.Message}, nil
 }

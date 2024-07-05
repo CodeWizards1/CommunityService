@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -97,7 +98,7 @@ func (c *CommunityRepository) GetCommunity(ctx context.Context, comId string) (*
 
 	community := &Community{}
 
-	err := c.db.GetContext(ctx, community, query, comId)
+	err := c.db.QueryRowContext(ctx, query, comId).Scan(&community.ID, &community.Name, &community.Description, &community.Location, &community.CreatedAt, &community.UpdatedAt)
 	if err != nil {
 		errMsg := fmt.Sprintf("Failed to get community: %v", err)
 		return nil, &Message{Error: &errMsg}
@@ -133,10 +134,9 @@ func (c *CommunityRepository) UpdateCommunity(ctx context.Context, com *Communit
 		return nil, &Message{Error: &errMsg}
 	}
 
-	args = append(args, com.ID)
-	argIdx++
-
-	query := fmt.Sprintf("UPDATE communities SET %s, updated_at = NOW() WHERE id = $%s AND deleted_at IS NULL RETURNING id, name, description, location, created_at, updated_at", strings.Join(params, ", "), *com.ID)
+	args = append(args, *com.ID)
+	query := fmt.Sprintf("UPDATE communities SET %s, updated_at = NOW() WHERE id = $%d AND deleted_at IS NULL RETURNING id, name, description, location, created_at, updated_at", strings.Join(params, ", "), argIdx)
+	fmt.Println(query, args)
 
 	community := &Community{}
 	err := c.db.QueryRowContext(ctx, query, args...).Scan(&community.ID, &community.Name, &community.Description, &community.Location, &community.CreatedAt, &community.UpdatedAt)
@@ -176,24 +176,35 @@ func (c *CommunityRepository) GetAllCommunities(ctx context.Context, comFilter *
 		args = append(args, *comFilter.Name)
 		argIdx++
 	}
+
 	if comFilter.Location != nil {
 		params = append(params, fmt.Sprintf("location = $%d", argIdx))
 		args = append(args, *comFilter.Location)
 		argIdx++
 	}
+	query := ""
+	if len(params) > 1 {
 
-	query := fmt.Sprintf("SELECT id, name, description, location, created_at, updated_at FROM communities WHERE %s", strings.Join(params, " AND "))
+		query = fmt.Sprintf("SELECT id, name, description, location, created_at, updated_at FROM communities WHERE %s", strings.Join(params, " AND "))
+	} else {
+		query = "SELECT id, name, description, location, created_at, updated_at FROM communities"
+
+	}
 
 	if comFilter.Limit != nil {
 		query += fmt.Sprintf(" LIMIT $%d", argIdx)
 		args = append(args, *comFilter.Limit)
 		argIdx++
 	}
+
 	if comFilter.Offset != nil {
 		query += fmt.Sprintf(" OFFSET $%d", argIdx)
 		args = append(args, *comFilter.Offset)
 		argIdx++
 	}
+
+	log.Println("query: ", query)
+	log.Println("args: ", args)
 
 	rows, err := c.db.QueryxContext(ctx, query, args...)
 	if err != nil {
@@ -204,14 +215,25 @@ func (c *CommunityRepository) GetAllCommunities(ctx context.Context, comFilter *
 
 	communities := []*Community{}
 	for rows.Next() {
-		community := &Community{}
-		if err := rows.StructScan(community); err != nil {
+		var id, name, description, location string
+		var createdAt, updatedAt time.Time
+
+		if err := rows.Scan(&id, &name, &description, &location, &createdAt, &updatedAt); err != nil {
 			errMsg := fmt.Sprintf("Failed to scan community: %v", err)
 			return nil, &Message{Error: &errMsg}
 		}
+
+		community := &Community{
+			ID:          id,
+			Name:        name,
+			Description: description,
+			Location:    location,
+			CreatedAt:   createdAt,
+			UpdatedAt:   updatedAt,
+		}
 		communities = append(communities, community)
 	}
-
+	fmt.Println(communities)
 	successMsg := "Communities retrieved successfully"
 	return communities, &Message{Message: &successMsg}
 }
